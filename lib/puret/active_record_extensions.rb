@@ -47,6 +47,14 @@ module Puret
             self.send(attribute)
           end
         end
+
+        define_method :all_puret_attributes do
+          t_hash = Hash[translations.map {|t| [t.locale.to_sym, t]}]
+
+          Hash[I18n.available_locales.map do |l|
+             [l, Hash[attributes.map { |a| [a, t_hash[l].try(a)] }]]
+          end]
+        end
       end
 
       private
@@ -61,6 +69,8 @@ module Puret
     end
 
     module InstanceMethods
+      attr_writer :puret_attributes
+
       def puret_default_locale
         return default_locale.to_sym if respond_to?(:default_locale)
         return self.class.default_locale.to_sym if self.class.respond_to?(:default_locale)
