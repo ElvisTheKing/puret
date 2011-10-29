@@ -46,13 +46,35 @@ module Puret
           define_method "#{attribute}_before_type_cast" do
             self.send(attribute)
           end
+
+          #per locale attribute getter and setter
+          I18n.available_locales.each do |locale|
+
+            # setter
+            define_method "#{locale.to_s}_#{attribute}=" do |value|
+              puret_attributes[locale][attribute] = value
+            end
+
+            # getter
+            define_method "#{locale.to_s}_#{attribute}" do
+              # return previously setted attributes if present
+              return puret_attributes[I18n.locale][attribute] if puret_attributes[I18n.locale][attribute]
+              return if new_record?
+
+              # else lookup only in givel locale
+              translation = translations.detect { |t| t.locale.to_sym == locale && t[attribute] }
+              translation ? translation[attribute] : nil
+            end
+          end
+
         end
 
+        # mass atribute getter
         define_method :all_puret_attributes do
-          t_hash = Hash[translations.map {|t| [t.locale.to_sym, t]}]
+          t_hash = Hash[translations.map { |t| [t.locale.to_sym, t] }]
 
           Hash[I18n.available_locales.map do |l|
-             [l, Hash[attributes.map { |a| [a, t_hash[l].try(a)] }]]
+            [l, Hash[attributes.map { |a| [a, t_hash[l].try(a)] }]]
           end]
         end
       end
